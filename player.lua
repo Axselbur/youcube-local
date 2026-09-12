@@ -46,7 +46,7 @@ local function NetFile(id, parts)
             if e == "modem_message" and chan == CHANNEL and type(msg) == "table"
                 and msg.to == me and msg.from == part.pc
                 and msg.f == self.id and msg.p == (self.pi - 1) then
-                if msg.c == "data" then
+                if msg.c == "data" and msg.o == self.off + total then
                     got[#got + 1] = msg.d
                     total = total + #msg.d
                     os.cancelTimer(t)
@@ -152,7 +152,10 @@ local function buildScreens()
         end
         return screens
     end
-    local t = term.current() or term
+    local ok, t = pcall(term.current)
+    if not ok or not t then
+        t = term
+    end
     local w, h = t.getSize()
     return {{t = t, x = 0, y = 0, w = w, h = h}}
 end

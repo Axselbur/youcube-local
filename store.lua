@@ -60,6 +60,10 @@ local function handle(msg, replyChannel)
         if not fs.exists(ROOT) then
             fs.makeDir(ROOT)
         end
+        if freeSpace() < #msg.d then
+            reply(replyChannel, {c = "stored", from = me, to = msg.from, f = msg.f, p = msg.p, o = msg.o, ok = false})
+            return
+        end
         local p = partPath(msg.f, msg.p)
         local f = fs.open(p, "r+b") or fs.open(p, "wb")
         local ok = false
@@ -88,12 +92,14 @@ local function handle(msg, replyChannel)
             if f then
                 f.seek("set", msg.o)
                 local left = math.min(msg.n or SLICE, size - msg.o)
+                local curOff = msg.o
                 while left > 0 do
                     local data = f.read(math.min(SLICE, left))
                     if not data or #data == 0 then
                         break
                     end
-                    reply(replyChannel, {c = "data", from = me, to = msg.from, f = msg.f, p = msg.p, d = data})
+                    reply(replyChannel, {c = "data", from = me, to = msg.from, f = msg.f, p = msg.p, o = curOff, d = data})
+                    curOff = curOff + #data
                     left = left - #data
                 end
                 f.close()
@@ -103,8 +109,8 @@ local function handle(msg, replyChannel)
 end
 
 while true do
-    local ok, _, chan, replyChannel, msg = pcall(os.pullEvent, "modem_message")
-    if ok and chan == CHANNEL and type(msg) == "table" and msg.c then
+    local ok, e, _, chan, replyChannel, msg = pcall(os.pullEvent, "modem_message")
+    if ok and e == "modem_message" and chan == CHANNEL and type(msg) == "table" and msg.c then
         pcall(handle, msg, replyChannel)
     end
 end
