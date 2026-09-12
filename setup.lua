@@ -191,6 +191,15 @@ local function distribute(fileId, url, pcs, nextPc)
 end
 
 local function main()
+    print("Event system test: waiting 2s for a timer ...")
+    local t = os.startTimer(2)
+    local e, a = os.pullEvent()
+    if e == "timer" and a == t then
+        print("Timer OK")
+    else
+        print("Timer FAILED: got '" .. tostring(e) .. "'")
+    end
+
     print("=== YouCube Local setup ===")
     local pcs = discover()
 
