@@ -58,6 +58,7 @@ local function handle(msg, replyChannel)
     end
 
     if msg.c == "ping" then
+        print("[store] ping from PC " .. tostring(msg.from))
         reply(replyChannel, {c = "hello", from = me, to = msg.from, free = freeSpace()})
 
     elseif msg.c == "space" then

@@ -69,11 +69,26 @@ local function discover()
         pcs[#pcs + 1] = {id = id, free = free}
     end
     if #pcs == 0 then
+        print("No storage PCs found automatically.")
+        term.write("Enter storage PC IDs separated by spaces (or press Enter to quit): ")
+        local input = read()
+        for id in input:gmatch("%d+") do
+            local numId = tonumber(id)
+            local r = request({c = "space"}, numId, 3)
+            if r and r.free ~= nil then
+                pcs[#pcs + 1] = {id = numId, free = r.free}
+                print(string.format("  -> PC %d OK (%d MB free)", numId, math.floor(r.free / 1024 / 1024)))
+            else
+                print("  -> PC " .. id .. " no answer")
+            end
+        end
+    end
+    if #pcs == 0 then
         error(
             "No storage PCs found.\n" ..
             "Check:\n" ..
             " 1. store.lua is running on every storage PC\n" ..
-            " 2. all PCs are linked with wired modems + rednet cable\n" ..
+            " 2. all PCs are linked with wired modems + network cable\n" ..
             " 3. modem sides are correct (run with: setup <side>)"
         )
     end
