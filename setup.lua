@@ -3,7 +3,7 @@
 -- Downloads media from GitHub, splits it into parts and distributes them
 -- across storage PCs over the wired network.
 
-local MODEM_SIDE = "back"
+local MODEM_SIDE = ... or "back"
 local CHANNEL     = 42042
 local SLICE       = 32 * 1024
 local PART_SIZE   = 8 * 1024 * 1024
@@ -20,50 +20,58 @@ local modem = peripheral.find("modem", function(_, w)
     return true
 end)
 if not modem then
-    error("No wired modem found")
+    error("No wired modem found. Set the side: setup <side>")
 end
 modem.open(CHANNEL)
 local me = os.getComputerID()
+print(string.format("I am PC %d, using modem on side: %s", me, MODEM_SIDE))
 
 local function request(msg, to, timeout)
     msg.from = me
     msg.to = to
     modem.transmit(CHANNEL, CHANNEL, msg)
-    local t = os.startTimer(timeout or 3)
-    while true do
-        local e, _, chan, _, got = os.pullEvent()
+    local start = os.clock()
+    timeout = timeout or 3
+    while os.clock() - start < timeout do
+        local e, _, chan, _, got = os.pullEvent(timeout - (os.clock() - start))
         if e == "modem_message" and chan == CHANNEL and type(got) == "table"
             and got.to == me and got.from == to then
-            os.cancelTimer(t)
             return got
-        elseif e == "timer" and chan == t then
-            return nil
         end
     end
+    return nil
 end
 
 local function discover()
-    print("Searching for storage PCs ...")
-    modem.transmit(CHANNEL, CHANNEL, {c = "ping", from = me})
+    print("Searching for storage PCs (8 sec) ...")
     local found = {}
-    local deadline = os.startTimer(4)
-    while true do
-        local e, _, chan, _, got = os.pullEvent()
-        if e == "timer" and chan == deadline then
-            break
+    local start = os.clock()
+    local nextPing = start
+    while os.clock() - start < 8 do
+        if os.clock() >= nextPing then
+            modem.transmit(CHANNEL, CHANNEL, {c = "ping", from = me})
+            nextPing = os.clock() + 2
         end
-        if e == "modem_message" and chan == CHANNEL and type(got) == "table"
-            and got.c == "hello" and got.to == me and not found[got.from] then
-            found[got.from] = got.free
+        local e, _, chan, _, msg = os.pullEvent(1)
+        if e == "modem_message" and chan == CHANNEL and type(msg) == "table" then
+            if msg.c == "hello" and msg.to == me and not found[msg.from] then
+                found[msg.from] = msg.free
+                print(string.format("  -> found storage PC %d (%d MB free)", msg.from, math.floor((msg.free or 0) / 1024 / 1024)))
+            end
         end
     end
     local pcs = {}
     for id, free in pairs(found) do
         pcs[#pcs + 1] = {id = id, free = free}
-        print(string.format("  PC %d: %d MB free", id, math.floor(free / 1024 / 1024)))
     end
     if #pcs == 0 then
-        error("No storage PCs found. Run store.lua on them first.")
+        error(
+            "No storage PCs found.\n" ..
+            "Check:\n" ..
+            " 1. store.lua is running on every storage PC\n" ..
+            " 2. all PCs are linked with wired modems + rednet cable\n" ..
+            " 3. modem sides are correct (run with: setup <side>)"
+        )
     end
     return pcs
 end

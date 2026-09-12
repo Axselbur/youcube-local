@@ -1,7 +1,7 @@
 -- YouCube Local: storage node.
 -- Run this on EVERY storage PC. It stores file parts and serves them.
 
-local MODEM_SIDE = "back"
+local MODEM_SIDE = ... or "back"
 local CHANNEL     = 42042
 local SLICE       = 32 * 1024
 local CAPACITY    = 10 * 1024 * 1024
@@ -16,7 +16,7 @@ local modem = peripheral.find("modem", function(_, w)
     return true
 end)
 if not modem then
-    error("No wired modem found")
+    error("No wired modem found. Set the side: store <side>")
 end
 modem.open(CHANNEL)
 
@@ -115,9 +115,14 @@ local function handle(msg, replyChannel)
     end
 end
 
+print(string.format("[store] PC %d | side %s | free %.1f MB", me, MODEM_SIDE, freeSpace() / 1048576))
+
 while true do
     local ok, e, _, chan, replyChannel, msg = pcall(os.pullEvent, "modem_message")
     if ok and e == "modem_message" and chan == CHANNEL and type(msg) == "table" and msg.c then
-        pcall(handle, msg, replyChannel)
+        local hok, herr = pcall(handle, msg, replyChannel)
+        if not hok then
+            print("[store] error: " .. tostring(herr))
+        end
     end
 end

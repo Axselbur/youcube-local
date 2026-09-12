@@ -1,7 +1,7 @@
 -- YouCube Local: player.
 -- Run on the main PC. Plays files from the local storage network.
 
-local MODEM_SIDE = "back"
+local MODEM_SIDE = ... or "back"
 local CHANNEL     = 42042
 local SLICE       = 32 * 1024
 local MANIFEST    = "/yc/manifest.json"
@@ -43,27 +43,24 @@ local function NetFile(id, parts)
         end
         local got = {}
         local total = 0
-        local t = os.startTimer(10)
+        local start = os.clock()
         modem.transmit(CHANNEL, CHANNEL, {
             c = "get", from = me, to = part.pc,
             f = self.id, p = self.pi - 1, o = self.off, n = want,
         })
         while total < want do
-            local e, _, chan, _, msg = os.pullEvent()
+            local e, _, chan, _, msg = os.pullEvent(math.max(1, 10 - (os.clock() - start)))
             if e == "modem_message" and chan == CHANNEL and type(msg) == "table"
                 and msg.to == me and msg.from == part.pc
                 and msg.f == self.id and msg.p == (self.pi - 1) then
                 if msg.c == "data" and msg.o == self.off + total then
                     got[#got + 1] = msg.d
                     total = total + #msg.d
-                    os.cancelTimer(t)
-                    t = os.startTimer(10)
+                    start = os.clock()
                 elseif msg.c == "eof" then
-                    os.cancelTimer(t)
                     break
                 end
-            elseif e == "timer" and chan == t then
-                os.cancelTimer(t)
+            elseif os.clock() - start >= 10 then
                 break
             end
         end
