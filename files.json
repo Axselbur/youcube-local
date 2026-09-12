@@ -1,0 +1,29 @@
+{
+    "files": [
+        {
+            "id": "116343968",
+            "type": "audio",
+            "url": "https://raw.githubusercontent.com/Axselbur/youcube-local/main/files/116343968.dfpwm"
+        },
+        {
+            "id": "f3b615db135287a64584737e664e1e4b",
+            "type": "audio",
+            "url": "https://raw.githubusercontent.com/Axselbur/youcube-local/main/files/f3b615db135287a64584737e664e1e4b.dfpwm"
+        },
+        {
+            "id": "f3b615db135287a64584737e664e1e4b",
+            "type": "video",
+            "url": "https://raw.githubusercontent.com/Axselbur/youcube-local/main/files/f3b615db135287a64584737e664e1e4b(102x57).32vid"
+        },
+        {
+            "id": "f82a527742b7a19d9f3d7246e92035d8",
+            "type": "audio",
+            "url": "https://raw.githubusercontent.com/Axselbur/youcube-local/main/files/f82a527742b7a19d9f3d7246e92035d8.dfpwm"
+        },
+        {
+            "id": "f82a527742b7a19d9f3d7246e92035d8",
+            "type": "video",
+            "url": "https://raw.githubusercontent.com/Axselbur/youcube-local/main/files/f82a527742b7a19d9f3d7246e92035d8(102x57).32vid"
+        }
+    ]
+}
