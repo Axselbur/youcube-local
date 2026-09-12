@@ -7,7 +7,14 @@ local SLICE       = 32 * 1024
 local CAPACITY    = 10 * 1024 * 1024
 local ROOT        = "/yc"
 
-local modem = peripheral.find("modem", function(_, w) return w.isWired() end)
+local modem = peripheral.find("modem", function(_, w)
+    if w.isWired then
+        return w.isWired()
+    elseif w.isWireless then
+        return not w.isWireless()
+    end
+    return true
+end)
 if not modem then
     error("No wired modem found")
 end

@@ -19,7 +19,14 @@ local GRID = {
     -- {"bottom", 78, 0},
 }
 
-local modem = peripheral.find("modem", function(_, w) return w.isWired() end)
+local modem = peripheral.find("modem", function(_, w)
+    if w.isWired then
+        return w.isWired()
+    elseif w.isWireless then
+        return not w.isWireless()
+    end
+    return true
+end)
 if not modem then
     error("No wired modem found")
 end

@@ -11,7 +11,14 @@ local FILES_URL   = "https://raw.githubusercontent.com/Axselbur/youcube-local/ma
 local MANIFEST    = "/yc/manifest.json"
 local TMP         = "/yc/.tmp"
 
-local modem = peripheral.find("modem", function(_, w) return w.isWired() end)
+local modem = peripheral.find("modem", function(_, w)
+    if w.isWired then
+        return w.isWired()
+    elseif w.isWireless then
+        return not w.isWireless()
+    end
+    return true
+end)
 if not modem then
     error("No wired modem found")
 end
