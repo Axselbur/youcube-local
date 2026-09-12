@@ -30,30 +30,34 @@ local function request(msg, to, timeout)
     msg.from = me
     msg.to = to
     modem.transmit(CHANNEL, CHANNEL, msg)
-    local start = os.clock()
-    timeout = timeout or 3
-    while os.clock() - start < timeout do
-        local e, _, chan, _, got = os.pullEvent(timeout - (os.clock() - start))
+    local t = os.startTimer(timeout or 3)
+    while true do
+        local e, _, chan, _, got = os.pullEvent()
         if e == "modem_message" and chan == CHANNEL and type(got) == "table"
             and got.to == me and got.from == to then
+            os.cancelTimer(t)
             return got
+        elseif e == "timer" and chan == t then
+            return nil
         end
     end
-    return nil
 end
 
 local function discover()
     print("Searching for storage PCs (8 sec) ...")
     local found = {}
-    local start = os.clock()
-    local nextPing = start
-    while os.clock() - start < 8 do
-        if os.clock() >= nextPing then
+    local deadline = os.startTimer(8)
+    local nextPing = os.startTimer(0)
+    while true do
+        local e, _, chan, _, msg = os.pullEvent()
+        if e == "timer" and chan == deadline then
+            os.cancelTimer(nextPing)
+            break
+        elseif e == "timer" and chan == nextPing then
             modem.transmit(CHANNEL, CHANNEL, {c = "ping", from = me})
-            nextPing = os.clock() + 2
-        end
-        local e, _, chan, _, msg = os.pullEvent(1)
-        if e == "modem_message" and chan == CHANNEL and type(msg) == "table" then
+            print("  pinging ...")
+            nextPing = os.startTimer(2)
+        elseif e == "modem_message" and chan == CHANNEL and type(msg) == "table" then
             if msg.c == "hello" and msg.to == me and not found[msg.from] then
                 found[msg.from] = msg.free
                 print(string.format("  -> found storage PC %d (%d MB free)", msg.from, math.floor((msg.free or 0) / 1024 / 1024)))

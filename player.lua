@@ -43,24 +43,27 @@ local function NetFile(id, parts)
         end
         local got = {}
         local total = 0
-        local start = os.clock()
+        local t = os.startTimer(10)
         modem.transmit(CHANNEL, CHANNEL, {
             c = "get", from = me, to = part.pc,
             f = self.id, p = self.pi - 1, o = self.off, n = want,
         })
         while total < want do
-            local e, _, chan, _, msg = os.pullEvent(math.max(1, 10 - (os.clock() - start)))
+            local e, _, chan, _, msg = os.pullEvent()
             if e == "modem_message" and chan == CHANNEL and type(msg) == "table"
                 and msg.to == me and msg.from == part.pc
                 and msg.f == self.id and msg.p == (self.pi - 1) then
                 if msg.c == "data" and msg.o == self.off + total then
                     got[#got + 1] = msg.d
                     total = total + #msg.d
-                    start = os.clock()
+                    os.cancelTimer(t)
+                    t = os.startTimer(10)
                 elseif msg.c == "eof" then
+                    os.cancelTimer(t)
                     break
                 end
-            elseif os.clock() - start >= 10 then
+            elseif e == "timer" and chan == t then
+                os.cancelTimer(t)
                 break
             end
         end
